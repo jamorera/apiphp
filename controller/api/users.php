@@ -1,18 +1,24 @@
 <?php
 
 header('Content-Type: application/json');
-require_once '../model/UserDao.php';
+require_once '../../model/UserDao.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $id = $_REQUEST['id'] ?? null;
 
 if ($method == 'GET' && !$id) index();
 if ($method == 'GET' && $id) show($id);
-if ($method == 'POST') store($id);
-if ($method == 'PUT' ) update($id);
+
+if ($_POST['_method']){
+    // if ($method == 'POST') {
+    $method = 'PUT';
+    // }
+}
+if ($method == 'POST') store();
+if ($method == 'PUT' && $id) update($id);
 if ($method == 'DELETE' ) destroy($id);
 
-
+// var_dump( $_POST['_method']);
 function index(){
     $dao = new UserDao();
     $users = $dao->GetAll();
@@ -25,7 +31,8 @@ function index(){
             'Years' => $user->getYears(),
             'email' => $user->getEmail(),
             'Image' => $user->getImage(),
-            'DocumentType' => $user->getDocumentType()
+            'DocumentType' => $user->getDocumentType(),
+            'numDocument' => $user->getNumDocument()
         ];
     }
     echo json_encode($result);
@@ -41,10 +48,11 @@ function show($id){
                 'id'=>$user->getId(),
                 'name' => $user->getName(),
                 'lastName' => $user->getLastName(),
-                'Years' => $user->getYears(),
+                'years' => $user->getYears(),
                 'email' => $user->getEmail(),
-                'Image' => $user->getImage(),
-                'DocumentType' => $user->getDocumentType()
+                'image' => $user->getImage(),
+                'documentType' => $user->getDocumentType(),
+                'numDocument' => $user->getNumDocument()
             ]
         ]);
         exit;
@@ -75,6 +83,7 @@ function store(){
             'email' => $_POST['email'],
             'image' => $ruta.$nameImg,
             'documentType' => $_POST['documentType'],
+            'numDocument' => $_POST['numDocument'],
         ];
         if ($dao->store($user)) {
             move_uploaded_file($_FILES['image']['tmp_name'],$carpeta_destino.$nameImg);
@@ -90,8 +99,10 @@ function store(){
 }
 
 function update($id){
-    $data = json_decode(file_get_contents('php://input'));
     $dao = new UserDao();
+    $nameImg = $_FILES['image']['name']; 
+    $ruta = '/apiphp/assets/img/';
+    $carpeta_destino=$_SERVER['DOCUMENT_ROOT'].$ruta;
     $user =array();
     if ($dao->GetById($id)) {
         if ($user) {
@@ -99,17 +110,21 @@ function update($id){
             echo json_encode(['msg'=>'El usuario ya a sido registrado, por favor verifique e intente nuevamente.']);
             exit;
         }else {
+            $item = $dao->GetById($id);
+            unlink($_SERVER['DOCUMENT_ROOT'].$item->image);
             $user =[
-                'name' => $data->name,
-                'lastName' => $data->lastName,
-                'years' => $data->years,
-                'email' => $data->email,
-                'image' => $data->image,
-                'documentType' => $data->documentType,
+                'name' => $_POST['name'],
+                'lastName' => $_POST['lastName'],
+                'years' => $_POST['years'],
+                'email' => $_POST['email'],
+                'image' => $ruta.$nameImg,
+                'documentType' => $_POST['documentType'],
+                'numDocument' => $_POST['numDocument'],
             ];
             if ($dao->update($user,$id)) {
+                move_uploaded_file($_FILES['image']['tmp_name'],$carpeta_destino.$nameImg);
                 http_response_code('201');
-                echo json_encode(['msg'=>'Datos registrados correctamente.']);
+                echo json_encode(['msg'=>'Datos actualizados correctamente.']);
                 exit;
             }            
         }
@@ -122,10 +137,12 @@ function update($id){
 
 function destroy($id){
     $dao = new UserDao();
-    if ($dao->GetById($id)) {
+    $item = $dao->GetById($id);
+    if ($item) {
+        unlink($_SERVER['DOCUMENT_ROOT'].$item->image);
         if ($dao->delete($id)) {
             http_response_code('201');
-            echo json_encode(['msg'=>'Datos registrados correctamente.']);
+            echo json_encode(['msg'=>'Datos eliminados correctamente.']);
             exit;
         }
     }

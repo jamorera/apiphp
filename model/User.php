@@ -1,16 +1,16 @@
 <?php
 
 class User {
-    private  int $id;
-    private  string $name;
-    private  string $lastName;
-    private  int $years;
-    private  string $email;
-    private  string $image;
-    private  string $documentType;
-    // private $numDocument;
+    public  int $id;
+    public  string $name;
+    public  string $lastName;
+    public  int $years;
+    public  string $email;
+    public  string $image;
+    public  string $documentType;
+    private $numDocument;
 
-    public function __construct($id,$name,$lastName,$years,$email,$image,$documentType)
+    public function __construct($id,$name,$lastName,$years,$email,$image,$documentType,$numDocument)
     {
         $this->id =$id;
         $this->name = $name;
@@ -19,7 +19,7 @@ class User {
         $this->email = $email;
         $this->image = $image;
         $this->documentType = $documentType;
-        // $this->numDocument = $numDocument;
+        $this->numDocument = $numDocument;
     }
 
     public function getId(){
@@ -50,8 +50,8 @@ class User {
         return $this->documentType;
     }
 
-    // public function getNumDocument(){
-    //     return $this->numDocument;
-    // }
+    public function getNumDocument(){
+        return $this->numDocument;
+    }
 
 }
